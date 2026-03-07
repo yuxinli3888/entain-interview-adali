@@ -11,7 +11,7 @@ on:
       - main
 
 jobs:
-  test:
+  unit-test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
