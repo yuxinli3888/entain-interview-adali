@@ -13,7 +13,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func TestRacesRepoApplyFilter(t *testing.T) {
+func TestRacesApplyFilter(t *testing.T) {
 	repo := &racesRepo{}
 	baseQuery := getRaceQueries()[racesList]
 
@@ -72,7 +72,7 @@ func TestRacesRepoApplyFilter(t *testing.T) {
 	}
 }
 
-func TestRacesRepoList(t *testing.T) {
+func TestRacesList(t *testing.T) {
 	tests := []struct {
 		name        string
 		seedData    bool

@@ -9,15 +9,18 @@ import (
 	"golang.org/x/net/context"
 )
 
-type stubRacesRepo struct {
+// This file contains unit tests for the racing service. We use a stub repository to isolate the service logic from the database layer.
+type stubRaces struct {
 	listFunc func(filter *racing.ListRacesRequestFilter) ([]*racing.Race, error)
 }
 
-func (s *stubRacesRepo) Init() error {
+// Init is a no-op for the stub repository.
+func (s *stubRaces) Init() error {
 	return nil
 }
 
-func (s *stubRacesRepo) List(filter *racing.ListRacesRequestFilter) ([]*racing.Race, error) {
+// List calls the configured listFunc
+func (s *stubRaces) List(filter *racing.ListRacesRequestFilter) ([]*racing.Race, error) {
 	return s.listFunc(filter)
 }
 
@@ -55,12 +58,12 @@ func TestRacingServiceListRaces(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var gotFilter *racing.ListRacesRequestFilter
-			repo := &stubRacesRepo{listFunc: func(in *racing.ListRacesRequestFilter) ([]*racing.Race, error) {
+			stub := &stubRaces{listFunc: func(in *racing.ListRacesRequestFilter) ([]*racing.Race, error) {
 				gotFilter = in
 				return tt.listResult, tt.listErr
 			}}
 
-			svc := NewRacingService(repo)
+			svc := NewRacingService(stub)
 			resp, err := svc.ListRaces(context.Background(), tt.request)
 
 			if tt.expectErr != nil {
