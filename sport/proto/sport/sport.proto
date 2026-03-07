@@ -1,0 +1,84 @@
+syntax = "proto3";
+package sport;
+
+option go_package = "/sport";
+
+import "google/protobuf/timestamp.proto";
+
+service Sport {
+  // ListEvents returns a list of all sport events.
+  rpc ListEvents(ListEventsRequest) returns (ListEventsResponse) {}
+}
+
+/* Requests/Responses */
+
+// Request for ListEvents call.
+message ListEventsRequest {
+  ListEventsRequestFilter filter = 1;
+}
+
+// Response to ListEvents call.
+message ListEventsResponse {
+  repeated Event events = 1;
+}
+
+// Filter for listing events.
+message ListEventsRequestFilter {
+  repeated int64 competition_ids = 1;
+  // When true, only events marked as visible are returned.
+  bool only_visible = 2;
+  // Enum value to sort events, ASC or DESC.
+  optional Order sort_order = 3;
+  // The attribute to sort events, default is advertised_start_time.
+  optional SortBy sort_by = 4;
+}
+
+/* Resources */
+
+// An event resource.
+message Event {
+  // ID represents a unique identifier for the event.
+  int64 id = 1;
+  // Name is the official name of the event.
+  string name = 2;
+  // AdvertisedStartTime is the time the event is advertised to run.
+  google.protobuf.Timestamp advertised_start_time = 3;
+  // Visible indicates whether the event is visible to consumers.
+  bool visible = 4;
+  // SportCode identifies the sport type (e.g. soccer, tennis).
+  string sport_code = 5;
+  // CompetitionID identifies the competition this event belongs to.
+  int64 competition_id = 6;
+  // HomeTeam is the home-side participant.
+  string home_team = 7;
+  // AwayTeam is the away-side participant.
+  string away_team = 8;
+  // Status describes the current lifecycle state of the event.
+  EventStatus status = 9;
+}
+
+// Order by rules
+enum Order {
+  ASC = 0;
+  DESC = 1;
+}
+
+// SortBy controls which event attribute is used for sorting.
+enum SortBy {
+  ADVERTISED_START_TIME = 0;
+  NAME = 1;
+  VISIBLE = 2;
+  SPORT_CODE = 3;
+  COMPETITION_ID = 4;
+  ID = 5;
+  HOME_TEAM = 6;
+  AWAY_TEAM = 7;
+  EVENT_STATUS = 8;
+}
+
+enum EventStatus {
+  SCHEDULED = 0;
+  LIVE = 1;
+  FINISHED = 2;
+  CANCELLED = 3;
+}

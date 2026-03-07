@@ -1,6 +1,6 @@
 .PHONY: download-dependencies install-lint run test build lint lint-fix clean
 
-MODULES := racing api
+MODULES := racing api sport
 GOLANGCI_LINT ?= golangci-lint
 GOLANGCI_LINT_PKG := github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 GO_BIN := $(shell go env GOBIN)
@@ -20,9 +20,10 @@ install-lint:
 	@command -v $(GOLANGCI_LINT) >/dev/null 2>&1 || (echo "golangci-lint not found in PATH after install" && exit 1)
 
 run: download-dependencies
-	@echo "Starting racing and api services..."
+	@echo "Starting racing, sport and api services..."
 	@trap 'kill 0' EXIT; \
 		(cd racing && go run .) & \
+		(cd sport && go run .) & \
 		(cd api && go run .) & \
 		wait
 
