@@ -192,6 +192,64 @@ func TestRacesList(t *testing.T) {
 	}
 }
 
+func TestRacesGetRace(t *testing.T) {
+	tests := []struct {
+		name        string
+		seedData    bool
+		raceID      int64
+		expectedIDs []int64
+		expectErr   error
+	}{
+		{
+			name:        "existing race id returns one race",
+			seedData:    true,
+			raceID:      2,
+			expectedIDs: []int64{2},
+		},
+		{
+			name:        "missing race id returns empty list",
+			seedData:    true,
+			raceID:      999,
+			expectedIDs: []int64{},
+		},
+		{
+			name:      "query error when table missing",
+			seedData:  false,
+			raceID:    1,
+			expectErr: errors.New("no such table: races"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dbConn := setupListTestDB(t, tt.seedData)
+			t.Cleanup(func() { _ = dbConn.Close() })
+
+			repo := &racesRepo{db: dbConn}
+			races, err := repo.GetRace(tt.raceID)
+
+			if tt.expectErr != nil {
+				if err == nil {
+					t.Fatalf("expected error containing %q, got nil", tt.expectErr.Error())
+				}
+				if !strings.Contains(err.Error(), tt.expectErr.Error()) {
+					t.Fatalf("unexpected error, got=%q want substring=%q", err.Error(), tt.expectErr.Error())
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("GetRace returned error: %v", err)
+			}
+
+			gotIDs := raceIDsInOrder(races)
+			if !reflect.DeepEqual(gotIDs, tt.expectedIDs) {
+				t.Fatalf("unexpected race ids, got=%v want=%v", gotIDs, tt.expectedIDs)
+			}
+		})
+	}
+}
+
 func setupListTestDB(t *testing.T, seed bool) *sql.DB {
 	t.Helper()
 
