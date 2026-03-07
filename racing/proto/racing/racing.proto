@@ -24,6 +24,8 @@ message ListRacesResponse {
 // Filter for listing races.
 message ListRacesRequestFilter {
   repeated int64 meeting_ids = 1;
+  // When true, only races marked as visible are returned.
+  bool only_visible = 2;
 }
 
 /* Resources */
@@ -43,4 +45,3 @@ message Race {
   // AdvertisedStartTime is the time the race is advertised to run.
   google.protobuf.Timestamp advertised_start_time = 6;
 }
-
