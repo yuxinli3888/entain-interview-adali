@@ -1,8 +1,14 @@
 name: Lint Check
 
+concurrency:
+  group: lint-${{ github.workflow }}-${{ github.run_id || github.head_ref }}
+  cancel-in-progress: true
+
 on:
   pull_request:
   push:
+    branches:
+      - main
 
 jobs:
   lint:
