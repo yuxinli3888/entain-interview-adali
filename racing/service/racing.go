@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"os"
+	"time"
 
 	"git.neds.sh/matty/entain/racing/db"
 	"git.neds.sh/matty/entain/racing/proto/racing"
@@ -65,7 +66,26 @@ func (s *racingService) ListRaces(ctx context.Context, in *racing.ListRacesReque
 		return nil, err
 	}
 
+	races = s.deriveRaceStatus(races)
 	s.logger.Printf("ListRaces succeeded (count=%d)", len(races))
 
 	return &racing.ListRacesResponse{Races: races}, nil
+}
+
+func (s *racingService) deriveRaceStatus(races []*racing.Race) []*racing.Race {
+	logName := "deriveRaceStatus"
+	now := time.Now()
+	s.logger.Printf("Start Processing %s for %d races", logName, len(races))
+
+	for _, race := range races {
+		if race == nil || race.AdvertisedStartTime == nil {
+			race.Status = racing.RaceStatus_CLOSED
+		}
+
+		if race.AdvertisedStartTime.AsTime().Before(now) {
+			race.Status = racing.RaceStatus_CLOSED
+		}
+
+	}
+	return races
 }
