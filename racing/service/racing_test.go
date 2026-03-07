@@ -25,7 +25,12 @@ func (s *stubRaces) List(filter *racing.ListRacesRequestFilter) ([]*racing.Race,
 }
 
 func TestRacingServiceListRaces(t *testing.T) {
-	filter := &racing.ListRacesRequestFilter{MeetingIds: []int64{42}, OnlyVisible: true}
+	filter := &racing.ListRacesRequestFilter{
+		MeetingIds: []int64{42},
+		OnlyVisible: true,
+		RaceOrder: orderPtr(racing.Order_DESC),
+		OrderAttribute: orderAttributePtr(racing.OrderAttribute_NAME),
+	}
 
 	tests := []struct {
 		name         string
@@ -34,6 +39,7 @@ func TestRacingServiceListRaces(t *testing.T) {
 		request      *racing.ListRacesRequest
 		expectedResp *racing.ListRacesResponse
 		expectErr    error
+		expectListCall bool
 	}{
 		{
 			name: "returns races from repository",
@@ -46,19 +52,29 @@ func TestRacingServiceListRaces(t *testing.T) {
 				{Id: 1, Name: "Alpha"},
 				{Id: 2, Name: "Beta"},
 			}},
+			expectListCall: true,
 		},
 		{
-			name:      "propagates repository error",
-			listErr:   errors.New("db unavailable"),
-			request:   &racing.ListRacesRequest{Filter: filter},
-			expectErr: errors.New("db unavailable"),
+			name:           "propagates repository error",
+			listErr:        errors.New("db unavailable"),
+			request:        &racing.ListRacesRequest{Filter: filter},
+			expectErr:      errors.New("db unavailable"),
+			expectListCall: true,
+		},
+		{
+			name:           "nil request returns validation error",
+			request:        nil,
+			expectErr:      errors.New("list races request is required"),
+			expectListCall: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var gotFilter *racing.ListRacesRequestFilter
+			listCalled := false
 			stub := &stubRaces{listFunc: func(in *racing.ListRacesRequestFilter) ([]*racing.Race, error) {
+				listCalled = true
 				gotFilter = in
 				return tt.listResult, tt.listErr
 			}}
@@ -76,6 +92,9 @@ func TestRacingServiceListRaces(t *testing.T) {
 				if resp != nil {
 					t.Fatalf("expected nil response on error, got=%+v", resp)
 				}
+				if listCalled != tt.expectListCall {
+					t.Fatalf("unexpected list invocation, got=%t want=%t", listCalled, tt.expectListCall)
+				}
 				return
 			}
 
@@ -90,6 +109,18 @@ func TestRacingServiceListRaces(t *testing.T) {
 			if gotFilter != tt.request.Filter {
 				t.Fatalf("request filter not forwarded to repository")
 			}
+
+			if listCalled != tt.expectListCall {
+				t.Fatalf("unexpected list invocation, got=%t want=%t", listCalled, tt.expectListCall)
+			}
 		})
 	}
+}
+
+func orderPtr(order racing.Order) *racing.Order {
+	return &order
+}
+
+func orderAttributePtr(attr racing.OrderAttribute) *racing.OrderAttribute {
+	return &attr
 }

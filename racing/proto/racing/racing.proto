@@ -26,6 +26,10 @@ message ListRacesRequestFilter {
   repeated int64 meeting_ids = 1;
   // When true, only races marked as visible are returned.
   bool only_visible = 2;
+  // Enum value to order races, ASC or DESC
+  optional Order race_order = 3;
+  // The attribute to order races, default is advertised_start_time
+  optional OrderAttribute order_attribute = 4;
 }
 
 /* Resources */
@@ -44,4 +48,20 @@ message Race {
   bool visible = 5;
   // AdvertisedStartTime is the time the race is advertised to run.
   google.protobuf.Timestamp advertised_start_time = 6;
+}
+
+// Order by rules
+enum Order {
+  ASC = 0;
+  DESC = 1;
+}
+
+// The Attirbute to order
+enum OrderAttribute {
+  ADVERTISED_START_TIME = 0;
+  VISIBLE = 1;
+  NUMBER = 2;
+  NAME = 3;
+  MEETING_ID= 4;
+  ID = 5;
 }

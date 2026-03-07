@@ -27,8 +27,9 @@ run: download-dependencies
 		wait
 
 test: download-dependencies
-	@for module in $(MODULES); do \
-		cd $$module && go test ./...; \
+	@set -e; for module in $(MODULES); do \
+		cd $$module; \
+		go test ./...; \
 		cd - >/dev/null; \
 	done
 

@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"reflect"
-	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -28,25 +27,45 @@ func TestRacesApplyFilter(t *testing.T) {
 			name:        "nil filter",
 			filter:      nil,
 			expectWhere: false,
+			expectedFragments: []string{
+				"ORDER BY advertised_start_time ASC",
+			},
 		},
 		{
 			name:              "meeting ids only",
 			filter:            &racing.ListRacesRequestFilter{MeetingIds: []int64{1, 2, 3}},
 			expectWhere:       true,
-			expectedFragments: []string{"meeting_id IN (?,?,?)"},
+			expectedFragments: []string{"meeting_id IN (?,?,?)", "ORDER BY advertised_start_time ASC"},
 			expectedArgs:      []interface{}{int64(1), int64(2), int64(3)},
 		},
 		{
 			name:              "only visible",
 			filter:            &racing.ListRacesRequestFilter{OnlyVisible: true},
 			expectWhere:       true,
-			expectedFragments: []string{"visible == 1"},
+			expectedFragments: []string{"visible == 1", "ORDER BY advertised_start_time ASC"},
+		},
+		{
+			name: "custom race order desc",
+			filter: &racing.ListRacesRequestFilter{
+				RaceOrder: orderPtr(racing.Order_DESC),
+			},
+			expectWhere:       false,
+			expectedFragments: []string{"ORDER BY advertised_start_time DESC"},
+		},
+		{
+			name: "custom order attribute and direction",
+			filter: &racing.ListRacesRequestFilter{
+				OrderAttribute: orderAttributePtr(racing.OrderAttribute_NAME),
+				RaceOrder:      orderPtr(racing.Order_ASC),
+			},
+			expectWhere:       false,
+			expectedFragments: []string{"ORDER BY name ASC"},
 		},
 		{
 			name:              "meeting ids and visible",
 			filter:            &racing.ListRacesRequestFilter{MeetingIds: []int64{7, 9}, OnlyVisible: true},
 			expectWhere:       true,
-			expectedFragments: []string{"meeting_id IN (?,?)", "visible == 1", " AND "},
+			expectedFragments: []string{"meeting_id IN (?,?)", "visible == 1", " AND ", "ORDER BY advertised_start_time ASC"},
 			expectedArgs:      []interface{}{int64(7), int64(9)},
 		},
 	}
@@ -84,25 +103,50 @@ func TestRacesList(t *testing.T) {
 			name:        "no filter returns all races",
 			seedData:    true,
 			filter:      nil,
-			expectedIDs: []int64{1, 2, 3},
+			expectedIDs: []int64{3, 2, 1},
 		},
 		{
 			name:        "meeting id filter",
 			seedData:    true,
 			filter:      &racing.ListRacesRequestFilter{MeetingIds: []int64{11}},
-			expectedIDs: []int64{1, 3},
+			expectedIDs: []int64{3, 1},
 		},
 		{
 			name:        "only visible filter",
 			seedData:    true,
 			filter:      &racing.ListRacesRequestFilter{OnlyVisible: true},
-			expectedIDs: []int64{1, 3},
+			expectedIDs: []int64{3, 1},
 		},
 		{
 			name:        "combined filter",
 			seedData:    true,
 			filter:      &racing.ListRacesRequestFilter{MeetingIds: []int64{12}, OnlyVisible: true},
 			expectedIDs: []int64{},
+		},
+		{
+			name:     "default order attribute with desc direction",
+			seedData: true,
+			filter: &racing.ListRacesRequestFilter{
+				RaceOrder: orderPtr(racing.Order_DESC),
+			},
+			expectedIDs: []int64{1, 2, 3},
+		},
+		{
+			name:     "order by name asc",
+			seedData: true,
+			filter: &racing.ListRacesRequestFilter{
+				OrderAttribute: orderAttributePtr(racing.OrderAttribute_NAME),
+			},
+			expectedIDs: []int64{2, 1, 3},
+		},
+		{
+			name:     "order by id desc",
+			seedData: true,
+			filter: &racing.ListRacesRequestFilter{
+				OrderAttribute: orderAttributePtr(racing.OrderAttribute_ID),
+				RaceOrder:      orderPtr(racing.Order_DESC),
+			},
+			expectedIDs: []int64{3, 2, 1},
 		},
 		{
 			name:      "query error when table missing",
@@ -134,7 +178,7 @@ func TestRacesList(t *testing.T) {
 				t.Fatalf("List returned error: %v", err)
 			}
 
-			gotIDs := raceIDs(races)
+			gotIDs := raceIDsInOrder(races)
 			if !reflect.DeepEqual(gotIDs, tt.expectedIDs) {
 				t.Fatalf("unexpected race ids, got=%v want=%v", gotIDs, tt.expectedIDs)
 			}
@@ -181,9 +225,9 @@ func setupListTestDB(t *testing.T, seed bool) *sql.DB {
 		visible   bool
 		startTime time.Time
 	}{
-		{id: 1, meetingID: 11, name: "Race One", number: 1, visible: true, startTime: start},
-		{id: 2, meetingID: 12, name: "Race Two", number: 2, visible: false, startTime: start.Add(time.Hour)},
-		{id: 3, meetingID: 11, name: "Race Three", number: 3, visible: true, startTime: start.Add(2 * time.Hour)},
+		{id: 1, meetingID: 11, name: "Bravo", number: 2, visible: true, startTime: start.Add(2 * time.Hour)},
+		{id: 2, meetingID: 12, name: "Alpha", number: 3, visible: false, startTime: start.Add(time.Hour)},
+		{id: 3, meetingID: 11, name: "Charlie", number: 1, visible: true, startTime: start},
 	}
 
 	for _, row := range rows {
@@ -209,6 +253,17 @@ func raceIDs(races []*racing.Race) []int64 {
 	for _, race := range races {
 		ids = append(ids, race.Id)
 	}
-	sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
 	return ids
+}
+
+func raceIDsInOrder(races []*racing.Race) []int64 {
+	return raceIDs(races)
+}
+
+func orderPtr(order racing.Order) *racing.Order {
+	return &order
+}
+
+func orderAttributePtr(attr racing.OrderAttribute) *racing.OrderAttribute {
+	return &attr
 }

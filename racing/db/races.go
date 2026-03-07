@@ -12,6 +12,22 @@ import (
 	"git.neds.sh/matty/entain/racing/proto/racing"
 )
 
+var (
+	raceOrderRulesMap = map[racing.Order]string{
+		racing.Order_ASC:  "ASC",
+		racing.Order_DESC: "DESC",
+	}
+
+	orderAttributeMap = map[racing.OrderAttribute]string{
+		racing.OrderAttribute_ADVERTISED_START_TIME: "advertised_start_time",
+		racing.OrderAttribute_NAME:                  "name",
+		racing.OrderAttribute_NUMBER:                "number",
+		racing.OrderAttribute_ID:                    "id",
+		racing.OrderAttribute_MEETING_ID:            "meeting_id",
+		racing.OrderAttribute_VISIBLE:               "visible",
+	}
+)
+
 // RacesRepo provides repository access to races.
 type RacesRepo interface {
 	// Init will initialise our races repository.
@@ -68,25 +84,35 @@ func (r *racesRepo) applyFilter(query string, filter *racing.ListRacesRequestFil
 		args    []interface{}
 	)
 
-	if filter == nil {
-		return query, args
-	}
+	orderAttribute := orderAttributeMap[racing.OrderAttribute_ADVERTISED_START_TIME]
+	orderRules := raceOrderRulesMap[racing.Order_ASC]
 
-	if len(filter.MeetingIds) > 0 {
-		clauses = append(clauses, "meeting_id IN ("+strings.Repeat("?,", len(filter.MeetingIds)-1)+"?)")
+	if filter != nil {
+		if len(filter.MeetingIds) > 0 {
+			clauses = append(clauses, "meeting_id IN ("+strings.Repeat("?,", len(filter.MeetingIds)-1)+"?)")
 
-		for _, meetingID := range filter.MeetingIds {
-			args = append(args, meetingID)
+			for _, meetingID := range filter.MeetingIds {
+				args = append(args, meetingID)
+			}
 		}
-	}
 
-	if filter.GetOnlyVisible() {
-		clauses = append(clauses, "visible == 1")
+		if filter.GetOnlyVisible() {
+			clauses = append(clauses, "visible == 1")
+		}
+
+		if candidate, ok := orderAttributeMap[filter.GetOrderAttribute()]; ok {
+			orderAttribute = candidate
+		}
+
+		if candidate, ok := raceOrderRulesMap[filter.GetRaceOrder()]; ok {
+			orderRules = candidate
+		}
 	}
 
 	if len(clauses) != 0 {
 		query += " WHERE " + strings.Join(clauses, " AND ")
 	}
+	query += " ORDER BY " + orderAttribute + " " + orderRules
 
 	return query, args
 }
