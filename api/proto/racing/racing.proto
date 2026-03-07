@@ -10,10 +10,21 @@ service Racing {
   // ListRaces returns a list of all races.
   rpc ListRaces(ListRacesRequest) returns (ListRacesResponse) {
     option (google.api.http) = { post: "/v1/list-races", body: "*" };
+  };
+  // GetRace will return a single race by its ID.
+  rpc GetRace(GetRaceRequest) returns (ListRacesResponse) {
+    option (google.api.http) = {
+      get: "/v1/get-race/{id}"
+    };
   }
 }
 
 /* Requests/Responses */
+
+// Request for ListSingleRaceByID call.
+message GetRaceRequest {
+  int64 id = 1;
+}
 
 // Request for ListRaces call.
 message ListRacesRequest {

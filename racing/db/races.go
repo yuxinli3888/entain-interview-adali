@@ -35,6 +35,9 @@ type RacesRepo interface {
 
 	// List will return a list of races.
 	List(filter *racing.ListRacesRequestFilter) ([]*racing.Race, error)
+
+	// ListSingleRaceByID will return a single race by its ID.
+	GetRace(raceID int64) ([]*racing.Race, error)
 }
 
 type racesRepo struct {
@@ -69,6 +72,24 @@ func (r *racesRepo) List(filter *racing.ListRacesRequestFilter) ([]*racing.Race,
 	query = getRaceQueries()[racesList]
 
 	query, args = r.applyFilter(query, filter)
+
+	rows, err := r.db.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.scanRaces(rows)
+}
+
+func (r *racesRepo) GetRace(raceID int64) ([]*racing.Race, error) {
+	var (
+		query string
+		args  []interface{}
+	)
+
+	query = getRaceQueries()[racesListSingle]
+
+	args = append(args, raceID)
 
 	rows, err := r.db.Query(query, args...)
 	if err != nil {
