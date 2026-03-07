@@ -4,9 +4,11 @@ import (
 	"errors"
 	"reflect"
 	"testing"
+	"time"
 
 	"git.neds.sh/matty/entain/racing/proto/racing"
 	"golang.org/x/net/context"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // This file contains unit tests for the racing service. We use a stub repository to isolate the service logic from the database layer.
@@ -25,32 +27,37 @@ func (s *stubRaces) List(filter *racing.ListRacesRequestFilter) ([]*racing.Race,
 }
 
 func TestRacingServiceListRaces(t *testing.T) {
+	pastTime := time.Date(2026, time.January, 1, 10, 0, 0, 0, time.UTC)
+	futureTime := time.Now().Add(1 * time.Hour)
+
 	filter := &racing.ListRacesRequestFilter{
-		MeetingIds: []int64{42},
-		OnlyVisible: true,
-		RaceOrder: orderPtr(racing.Order_DESC),
+		MeetingIds:     []int64{42},
+		OnlyVisible:    true,
+		RaceOrder:      orderPtr(racing.Order_DESC),
 		OrderAttribute: orderAttributePtr(racing.OrderAttribute_NAME),
 	}
 
 	tests := []struct {
-		name         string
-		listResult   []*racing.Race
-		listErr      error
-		request      *racing.ListRacesRequest
-		expectedResp *racing.ListRacesResponse
-		expectErr    error
+		name           string
+		listResult     []*racing.Race
+		listErr        error
+		request        *racing.ListRacesRequest
+		expectedResp   *racing.ListRacesResponse
+		expectErr      error
 		expectListCall bool
 	}{
 		{
 			name: "returns races from repository",
 			listResult: []*racing.Race{
-				{Id: 1, Name: "Alpha"},
-				{Id: 2, Name: "Beta"},
+				{Id: 1, Name: "Alpha", AdvertisedStartTime: timestamppb.New(pastTime)},
+				{Id: 2, Name: "Beta", AdvertisedStartTime: timestamppb.New(futureTime)},
+				{Id: 3, Name: "No Time"},
 			},
 			request: &racing.ListRacesRequest{Filter: filter},
 			expectedResp: &racing.ListRacesResponse{Races: []*racing.Race{
-				{Id: 1, Name: "Alpha"},
-				{Id: 2, Name: "Beta"},
+				{Id: 1, Name: "Alpha", AdvertisedStartTime: timestamppb.New(pastTime), Status: racing.RaceStatus_CLOSED},
+				{Id: 2, Name: "Beta", AdvertisedStartTime: timestamppb.New(futureTime), Status: racing.RaceStatus_OPEN},
+				{Id: 3, Name: "No Time", Status: racing.RaceStatus_CLOSED},
 			}},
 			expectListCall: true,
 		},

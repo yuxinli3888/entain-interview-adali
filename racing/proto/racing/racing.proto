@@ -48,6 +48,8 @@ message Race {
   bool visible = 5;
   // AdvertisedStartTime is the time the race is advertised to run.
   google.protobuf.Timestamp advertised_start_time = 6;
+  // Status is derived from advertised_start_time.
+  RaceStatus status = 7;
 }
 
 // Order by rules
@@ -64,4 +66,9 @@ enum OrderAttribute {
   NAME = 3;
   MEETING_ID= 4;
   ID = 5;
+}
+
+enum RaceStatus {
+  OPEN = 0;
+  CLOSED = 1;
 }
