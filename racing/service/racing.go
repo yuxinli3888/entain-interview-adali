@@ -49,11 +49,15 @@ func (s *racingService) ListRaces(ctx context.Context, in *racing.ListRacesReque
 
 	meetingIDCount := 0
 	onlyVisible := false
+	raceOrder := racing.Order_ASC
+	orderAttribute := racing.OrderAttribute_ADVERTISED_START_TIME
 	if in.Filter != nil {
 		meetingIDCount = len(in.Filter.MeetingIds)
 		onlyVisible = in.Filter.GetOnlyVisible()
+		raceOrder = in.Filter.GetRaceOrder()
+		orderAttribute = in.Filter.GetOrderAttribute()
 	}
-	s.logger.Printf("ListRaces called with filter: meeting_id_count=%d, only_visible=%t", meetingIDCount, onlyVisible)
+	s.logger.Printf("ListRaces called with filter: meeting_id_count=%d, only_visible=%t, race_order=%v, order by attribute %v", meetingIDCount, onlyVisible, raceOrder, orderAttribute)
 
 	races, err := s.racesRepo.List(in.Filter)
 	if err != nil {
