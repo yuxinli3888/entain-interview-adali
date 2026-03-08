@@ -59,4 +59,4 @@ clean:
 		cd $$module && go clean ./...; \
 		cd - >/dev/null; \
 	done
-	rm -f racing/racing api/api
+	rm -f racing/racing api/api sport/sport
