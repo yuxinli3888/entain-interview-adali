@@ -62,6 +62,7 @@ func (r *racesRepo) Init() error {
 	return err
 }
 
+// List returns a list of races, filtered by the provided criteria.
 func (r *racesRepo) List(filter *racing.ListRacesRequestFilter) ([]*racing.Race, error) {
 	var (
 		err   error
@@ -81,6 +82,7 @@ func (r *racesRepo) List(filter *racing.ListRacesRequestFilter) ([]*racing.Race,
 	return r.scanRaces(rows)
 }
 
+// GetRace returns a single race by its ID.
 func (r *racesRepo) GetRace(raceID int64) ([]*racing.Race, error) {
 	var (
 		query string
@@ -99,6 +101,7 @@ func (r *racesRepo) GetRace(raceID int64) ([]*racing.Race, error) {
 	return r.scanRaces(rows)
 }
 
+// applyFilter applies the provided filter criteria to the SQL query and returns the modified query along with the corresponding arguments.
 func (r *racesRepo) applyFilter(query string, filter *racing.ListRacesRequestFilter) (string, []interface{}) {
 	var (
 		clauses []string
