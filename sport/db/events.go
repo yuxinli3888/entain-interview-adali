@@ -62,6 +62,7 @@ func (r *eventsRepo) Init() error {
 	return err
 }
 
+// List returns a list of events, filtered by the provided criteria.
 func (r *eventsRepo) List(filter *sport.ListEventsRequestFilter) ([]*sport.Event, error) {
 	var (
 		query string

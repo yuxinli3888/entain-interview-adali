@@ -43,6 +43,8 @@ func NewRacingServiceWithLogger(racesRepo db.RacesRepo, logger *log.Logger) Raci
 	}
 }
 
+// ListRaces returns a collection of races, meeting the criteria specified in the request filter. If no filter is provided,
+// all races will be returned.
 func (s *racingService) ListRaces(ctx context.Context, in *racing.ListRacesRequest) (*racing.ListRacesResponse, error) {
 	if in == nil {
 		err := errors.New("list races request is required")
@@ -74,6 +76,7 @@ func (s *racingService) ListRaces(ctx context.Context, in *racing.ListRacesReque
 	return &racing.ListRacesResponse{Races: races}, nil
 }
 
+// GetRace returns a single race by its ID.
 func (s *racingService) GetRace(ctx context.Context, in *racing.GetRaceRequest) (*racing.ListRacesResponse, error) {
 	if in == nil {
 		err := errors.New("get race request is required")
@@ -94,6 +97,8 @@ func (s *racingService) GetRace(ctx context.Context, in *racing.GetRaceRequest) 
 	return &racing.ListRacesResponse{Races: races}, nil
 }
 
+// deriveRaceStatus determines the status of each race based on its advertised start time and the current time. If the advertised start time is in the past,
+// the race is marked as CLOSED; if it's in the future, it's marked as OPEN. If the advertised start time is not provided, the race is marked as CLOSED by default.
 func (s *racingService) deriveRaceStatus(races []*racing.Race) []*racing.Race {
 	logName := "deriveRaceStatus"
 	now := time.Now()
